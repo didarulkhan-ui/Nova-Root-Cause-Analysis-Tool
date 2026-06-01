@@ -1,1 +1,0 @@
-# Nova-Root-Cause-Analysis-Tool

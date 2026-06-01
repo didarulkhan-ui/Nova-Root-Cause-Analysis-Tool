@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova Audit Group — Root Cause Analysis Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0A3D62; --blue:#1A9FFF; --cloud:#EDEFF7; --smoke:#D3D6E0;
+    --steel:#BCBFCC; --space:#9DA2B3; --graphite:#6E7180; --arsenic:#40424D;
+    --phantom:#1E1E24; --white:#fff; --amber:#B8860B; --amberbg:#FFF6E0;
+    --red:#B23A48; --redbg:#FCEDEE; --green:#1E7D4F; --greenbg:#E8F6EF;
+  }
+  *{box-sizing:border-box}
+  body{font-family:'Manrope',Arial,sans-serif;color:var(--arsenic);margin:0;background:var(--cloud);font-size:14px;line-height:1.5}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+  header.brand{background:var(--navy);color:#fff;padding:22px 0}
+  header.brand .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:0;padding-bottom:0}
+  .logo{display:flex;align-items:center;gap:14px}
+  .logo .mark{width:42px;height:42px;border-radius:9px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#fff;letter-spacing:-1px}
+  .logo h1{font-size:19px;margin:0;font-weight:800;letter-spacing:-.2px}
+  .logo .tag{font-size:11px;color:var(--blue);font-weight:600;margin-top:2px}
+  .toptitle{text-align:right}
+  .toptitle .doc{font-weight:700;font-size:15px}
+  .toptitle .sub{font-size:11px;color:var(--steel)}
+  .toolbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--smoke);padding:10px 0}
+  .toolbar .wrap{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:0;padding-bottom:0}
+  button{font-family:inherit;font-size:13px;font-weight:600;border:1px solid var(--steel);background:#fff;color:var(--navy);padding:8px 14px;border-radius:7px;cursor:pointer}
+  button:hover{border-color:var(--blue);color:var(--blue)}
+  button.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+  button.primary:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+  button.ghost{border-color:transparent;color:var(--graphite)}
+  .spacer{flex:1}
+  .status{font-size:11px;color:var(--graphite);font-weight:600}
+  section.card{background:#fff;border:1px solid var(--smoke);border-radius:12px;margin-top:20px;overflow:hidden}
+  .card h2{background:var(--cloud);color:var(--navy);margin:0;padding:14px 20px;font-size:15px;font-weight:700;border-bottom:2px solid var(--blue);display:flex;align-items:center;gap:10px}
+  .card h2 .n{width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .card .body{padding:18px 20px}
+  .hint{font-size:12px;color:var(--graphite);margin:-4px 0 14px;border-left:3px solid var(--blue);padding-left:10px}
+  label{display:block;font-weight:600;font-size:12px;color:var(--navy);margin-bottom:5px}
+  .req::after{content:" *";color:var(--blue)}
+  input[type=text],input[type=date],input[type=number],select,textarea{width:100%;font-family:inherit;font-size:13px;color:var(--arsenic);border:1px solid var(--steel);border-radius:7px;padding:8px 10px;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,159,255,.12)}
+  textarea{resize:vertical;min-height:54px}
+  .grid{display:grid;gap:14px 18px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  .field{margin-bottom:14px}
+  .checkrow{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border:1px solid var(--smoke);border-radius:8px;margin-bottom:8px;background:var(--cloud)}
+  .checkrow input[type=checkbox]{margin-top:3px;width:16px;height:16px;flex-shrink:0}
+  .checkrow .lbl{font-weight:600;font-size:13px;color:var(--arsenic)}
+  .checkrow .desc{font-size:11px;color:var(--graphite)}
+  .checkrow .na{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--graphite);font-weight:600;white-space:nowrap}
+  .whychain{border:1px solid var(--smoke);border-radius:10px;padding:14px;margin-bottom:14px;background:var(--cloud)}
+  .whychain .chead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .whychain .chead b{color:var(--navy)}
+  .whyline{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+  .whyline .tag{flex-shrink:0;width:64px;font-size:11px;font-weight:700;color:var(--blue);text-align:right}
+  .actionrow{border:1px solid var(--smoke);border-radius:10px;padding:14px;margin-bottom:12px;background:#fff}
+  .mini{font-size:11px;color:var(--graphite);margin-top:3px}
+  .rm{border:1px solid var(--steel);background:#fff;color:var(--red);border-radius:6px;padding:4px 9px;font-size:12px;cursor:pointer}
+  .rm:hover{border-color:var(--red)}
+  .add{background:var(--cloud);border:1px dashed var(--blue);color:var(--blue);width:100%;padding:9px;border-radius:8px;font-weight:600}
+  details.ref{background:var(--cloud);border:1px solid var(--smoke);border-radius:8px;margin:10px 0;padding:0}
+  details.ref summary{cursor:pointer;padding:10px 14px;font-weight:700;color:var(--navy);font-size:12px}
+  details.ref .rb{padding:0 16px 14px;font-size:12px;color:var(--graphite)}
+  details.ref code{background:#fff;border:1px solid var(--smoke);border-radius:4px;padding:1px 5px;color:var(--navy)}
+  .checklist{list-style:none;padding:0;margin:0}
+  .checklist li{padding:5px 0 5px 22px;position:relative}
+  .checklist li::before{content:"✓";position:absolute;left:0;color:var(--blue);font-weight:800}
+  /* live validation panel */
+  #validate{position:fixed;right:18px;bottom:18px;width:320px;max-height:60vh;overflow:auto;background:#fff;border:1px solid var(--smoke);border-radius:12px;box-shadow:0 10px 30px rgba(10,61,98,.18);z-index:60}
+  #validate h3{margin:0;padding:12px 14px;font-size:13px;color:var(--navy);background:var(--cloud);border-bottom:1px solid var(--smoke);border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center}
+  #validate .vbody{padding:10px 12px}
+  .flag{border-radius:8px;padding:9px 11px;margin-bottom:8px;font-size:12px;line-height:1.4}
+  .flag.warn{background:var(--amberbg);border:1px solid #E7C66B;color:#7a5b00}
+  .flag.err{background:var(--redbg);border:1px solid #E0A6AD;color:#7d2530}
+  .flag.ok{background:var(--greenbg);border:1px solid #A7D8C0;color:#155e3b}
+  .flag b{display:block;margin-bottom:1px}
+  .pill{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--navy);color:#fff;vertical-align:middle}
+  .vtoggle{cursor:pointer;border:none;background:none;color:var(--navy);font-size:16px;padding:0}
+  footer.foot{text-align:center;color:var(--graphite);font-size:11px;margin-top:26px}
+  /* print */
+  @media print{
+    body{background:#fff;font-size:11px}
+    .toolbar,#validate,.add,.rm,.na,details.ref,.hint{display:none !important}
+    header.brand{background:var(--navy) !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .card h2{background:var(--cloud) !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    section.card{break-inside:avoid;box-shadow:none;border:1px solid #ccc}
+    .wrap{max-width:100%;padding:0 10px}
+    input,select,textarea{border:none;border-bottom:1px solid #ccc;border-radius:0;padding:2px 0}
+    textarea{height:auto}
+    .checkrow{background:#fff;border:1px solid #ddd}
+  }
+</style>
+</head>
+<body>
+<header class="brand">
+  <div class="wrap">
+    <div class="logo">
+      <div class="mark">N</div>
+      <div>
+        <h1>Nova Audit Group</h1>
+        <div class="tag">Precision in Every Audit</div>
+      </div>
+    </div>
+    <div class="toptitle">
+      <div class="doc">Root Cause Analysis Workpaper</div>
+      <div class="sub">ASQM 1 · ASIC REP 739 · CA ANZ / CPA RCA Guide</div>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="wrap">
+    <button class="primary" onclick="exportWorkpaper()">⤓ Export / Print Workpaper (PDF)</button>
+    <button onclick="saveDraft()">💾 Save draft (.json)</button>
+    <button onclick="document.getElementById('loadFile').click()">📂 Load draft</button>
+    <input type="file" id="loadFile" accept=".json" style="display:none" onchange="loadDraft(event)">
+    <button class="ghost" onclick="clearAll()">Clear</button>
+    <span class="spacer"></span>
+    <span class="status" id="autostatus">Autosaved to this browser</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- 1. ENGAGEMENT & FINDING -->
+  <section class="card">
+    <h2><span class="n">1</span> Engagement &amp; finding details</h2>
+    <div class="body">
+      <p class="hint">RCA is performed <b>after</b> a deficiency is already identified. This tool diagnoses <i>why</i> the deficiency occurred — it is not a tool for detecting whether something was missed (that is the review / EQR function).</p>
+      <div class="grid g3">
+        <div class="field"><label class="req">Client / audited entity</label><input type="text" data-f="client"></div>
+        <div class="field"><label>Engagement partner</label><input type="text" data-f="partner"></div>
+        <div class="field"><label>Financial period</label><input type="text" data-f="period" placeholder="e.g. FY ending 30 Jun 2025"></div>
+      </div>
+      <div class="grid g3">
+        <div class="field"><label>Finding reference</label><input type="text" data-f="findingref"></div>
+        <div class="field"><label class="req">Date finding identified</label><input type="date" data-f="datefound"></div>
+        <div class="field"><label class="req">Source of finding</label>
+          <select data-f="source">
+            <option value="">— select —</option>
+            <option>Internal monitoring — negative finding</option>
+            <option>Internal monitoring — positive finding (learn from success)</option>
+            <option>External regulator (ASIC) — negative finding</option>
+            <option>External regulator (ASIC) — other finding</option>
+            <option>Engagement Quality Review (EQR)</option>
+            <option>Restatement under AASB 108</option>
+            <option>Professional indemnity / complaint</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label class="req">Description of the finding / deficiency</label>
+        <textarea data-f="findingdesc" placeholder="What was the negative (or positive) quality finding? Be specific about the audit area, assertion and standard involved."></textarea>
+      </div>
+      <details class="ref"><summary>Better-practice scope reminder (ASIC REP 739)</summary>
+        <div class="rb">ASIC recommends running RCA not only on negative findings but also on: a sample of <b>positive</b> internal-monitoring files (to learn what makes a good audit), <b>all</b> regulator-reviewed files with findings, and listed-entity files with a restatement or ASIC media release.</div>
+      </details>
+    </div>
+  </section>
+
+  <!-- 2. INDEPENDENCE & TEAM -->
+  <section class="card">
+    <h2><span class="n">2</span> RCA preparer, independence &amp; oversight</h2>
+    <div class="body">
+      <p class="hint">ASIC found firms that kept RCA <b>independent of the engagement team and the monitoring team</b> reached better conclusions. The preparer should not be the engagement partner or the person who performed the monitoring review.</p>
+      <div class="grid g3">
+        <div class="field"><label class="req">RCA prepared by</label><input type="text" data-f="rcaby"></div>
+        <div class="field"><label>Role / function</label><input type="text" data-f="rcarole" placeholder="e.g. Quality / technical"></div>
+        <div class="field"><label>Date of analysis</label><input type="date" data-f="rcadate"></div>
+      </div>
+      <div class="grid g2">
+        <div class="field"><label>Reviewed by (leadership / oversight)</label><input type="text" data-f="reviewedby"></div>
+        <div class="field"><label>Target completion (timetable)</label><input type="date" data-f="target"></div>
+      </div>
+      <div class="checkrow"><input type="checkbox" data-f="ind1"><div><div class="lbl">Preparer is independent of the engagement team</div><div class="desc">Not the engagement partner, manager or a member of the engagement team for this file.</div></div></div>
+      <div class="checkrow"><input type="checkbox" data-f="ind2"><div><div class="lbl">Preparer is independent of the monitoring reviewer</div><div class="desc">Not the person who performed the internal monitoring review that raised the finding.</div></div></div>
+    </div>
+  </section>
+
+  <!-- 3. INFORMATION GATHERING -->
+  <section class="card">
+    <h2><span class="n">3</span> Information gathering — who was interviewed</h2>
+    <div class="body">
+      <p class="hint">ASIC's single biggest gap: <b>0 of 6 firms interviewed all relevant people.</b> Interview everyone who worked on the affected area — including the EQR and specialists. If a relevant person is not interviewed, record why.</p>
+      <div id="interviewees"></div>
+      <details class="ref"><summary>Why this matters</summary>
+        <div class="rb">Gather information <b>promptly</b> while memories are fresh and before staff move on. Use individual interviews (more candid than group), with a tailored agenda of topics. Review the working papers and the methodology/guidance in force at the time.</div>
+      </details>
+    </div>
+  </section>
+
+  <!-- 4. AQI -->
+  <section class="card">
+    <h2><span class="n">4</span> Audit Quality Indicators (AQIs) &amp; milestones</h2>
+    <div class="body">
+      <p class="hint">ASIC noted firms collected AQIs but rarely <b>used</b> them to reach the root cause. Capture the data, then ask whether it correlates with the finding.</p>
+      <div class="grid g2">
+        <div class="field"><label>Actual hours vs budget (partner / EQR / team)</label><input type="text" data-f="aqi_hours"></div>
+        <div class="field"><label>Years on engagement (partner / EQR / seniors)</label><input type="text" data-f="aqi_years" placeholder="experience strength vs familiarity threat"></div>
+        <div class="field"><label>Specialists used / technical consultations</label><input type="text" data-f="aqi_spec" placeholder="occurrence & timing"></div>
+        <div class="field"><label>Milestone timing</label><input type="text" data-f="aqi_milestones" placeholder="planning, first review, completion vs balance date"></div>
+        <div class="field"><label>Partner / EQR portfolio &amp; year-end concentration</label><input type="text" data-f="aqi_portfolio"></div>
+        <div class="field"><label>Training records of partner / staff</label><input type="text" data-f="aqi_training"></div>
+        <div class="field"><label>Fee, budget &amp; recovery rate</label><input type="text" data-f="aqi_fees"></div>
+        <div class="field"><label>Prior internal performance ratings</label><input type="text" data-f="aqi_ratings"></div>
+      </div>
+      <div class="field"><label>What do the AQIs suggest about the finding?</label><textarea data-f="aqi_analysis" placeholder="Correlations, patterns or red flags the indicators reveal."></textarea></div>
+    </div>
+  </section>
+
+  <!-- 5. FIVE WHYS -->
+  <section class="card">
+    <h2><span class="n">5</span> Root cause analysis — drill down (Five Whys)</h2>
+    <div class="body">
+      <p class="hint">Ask <b>"why?"</b> repeatedly — to a maximum of five levels — until you reach a cause you can act on. A finding may have more than one cause chain. Do not stop at a <b>symptom</b> (e.g. "insufficient documentation" is usually a symptom, not the root cause).</p>
+      <div id="whychains"></div>
+      <button class="add" onclick="addChain()">+ Add another cause chain</button>
+      <details class="ref"><summary>Symptom vs root cause — worked example</summary>
+        <div class="rb">Finding: cash-flow misclassification not identified. <code>Why?</code> Senior lacked understanding → <code>Why?</code> Inexperienced senior on the area → <code>Why?</code> Booked senior left / resource shortage → <code>Why?</code> Poor project management & fee pressure. <b>Root cause = resourcing + project management</b>, not "lack of training".</div>
+      </details>
+    </div>
+  </section>
+
+  <!-- 6. CLASSIFICATION -->
+  <section class="card">
+    <h2><span class="n">6</span> Root cause classification</h2>
+    <div class="body">
+      <p class="hint">Classify each identified root cause against the ASIC taxonomy. Identify whether it is <b>internal</b> (firm can influence) or <b>external</b>.</p>
+      <div id="rootcauses"></div>
+      <button class="add" onclick="addRoot()">+ Add a classified root cause</button>
+      <details class="ref"><summary>ASIC root-cause categories (REP 739, Fig 2)</summary>
+        <div class="rb">Knowledge &amp; skills of individuals · Professional scepticism &amp; mindset · Supervision &amp; review · Insufficient documentation · Use of specialists &amp; experts · High number of complex issues · Project management &amp; resourcing · Motivation &amp; commitment · Firm policies/procedures not followed.<br><br><b>Watch-outs:</b> "Documentation" and "training need" are the two most common mislabelled root causes — they are usually symptoms of supervision, scepticism, skills or project-management failures.</div>
+      </details>
+    </div>
+  </section>
+
+  <!-- 7. ACTIONS -->
+  <section class="card">
+    <h2><span class="n">7</span> Remediation / action plan</h2>
+    <div class="body">
+      <p class="hint">ASIC's main criticism: <b>10 of 12 RCAs defaulted to "more training"</b>. Map an action to each root cause, push beyond training, assign an owner and date, and plan a <b>real-time review on the next cycle</b> to confirm the fix worked.</p>
+      <div id="actions"></div>
+      <button class="add" onclick="addAction()">+ Add action</button>
+      <details class="ref"><summary>Wider actions to consider (beyond training)</summary>
+        <div class="rb">Supervision &amp; review changes · skill-mix / resourcing on the engagement · methodology, tools &amp; template improvements · project-management &amp; milestone monitoring · real-time review &amp; coaching next cycle · client / audit-committee communication · partner portfolio &amp; workload review · risk profiling for acceptance/continuance · behavioural / cultural actions.</div>
+      </details>
+    </div>
+  </section>
+
+  <!-- 8. CONCLUSION -->
+  <section class="card">
+    <h2><span class="n">8</span> Conclusion, themes &amp; sign-off</h2>
+    <div class="body">
+      <div class="field"><label>Overall conclusion on the root cause(s)</label><textarea data-f="conclusion" placeholder="Summarise the real underlying root cause(s) and why you are satisfied these are causes, not symptoms."></textarea></div>
+      <div class="field"><label>Thematic link — does this connect to other files / prior findings?</label><textarea data-f="theme" placeholder="Same root cause seen elsewhere? Feed into firm-wide remediation. (Low RCA volume: note manually here.)"></textarea></div>
+      <div class="grid g3">
+        <div class="field"><label>Preparer sign-off</label><input type="text" data-f="sign_prep"></div>
+        <div class="field"><label>Reviewer / leadership sign-off</label><input type="text" data-f="sign_rev"></div>
+        <div class="field"><label>Date finalised</label><input type="date" data-f="sign_date"></div>
+      </div>
+      <details class="ref"><summary>Better-practice checklist (use before finalising)</summary>
+        <div class="rb"><ul class="checklist">
+          <li>RCA was timely — done while matters were fresh</li>
+          <li>All relevant team members, EQR and specialists interviewed (or omission justified)</li>
+          <li>Symptom vs root cause challenged — drilled down, not a quick fix</li>
+          <li>AQIs/milestone data actually used to reach the conclusion</li>
+          <li>Preparer independent of engagement and monitoring teams</li>
+          <li>Actions go beyond training; each root cause has an owner and date</li>
+          <li>Real-time review/coaching planned for the next cycle</li>
+          <li>No blame culture — focus on system, not the individual</li>
+        </ul></div>
+      </details>
+    </div>
+  </section>
+
+  <footer class="foot">
+    © 2025 Nova Audit Group. All rights reserved. · "Precision in Every Audit" · Internal RCA workpaper — supports ASQM 1 monitoring &amp; remediation.
+  </footer>
+</div>
+
+<!-- LIVE VALIDATION -->
+<div id="validate">
+  <h3><span>Smart checks <span class="pill" id="flagcount">0</span></span><button class="vtoggle" onclick="toggleV()" title="collapse">–</button></h3>
+  <div class="vbody" id="vbody"></div>
+</div>
+
+<script>
+/* ---------- config ---------- */
+const INTERVIEWEES = [
+  ["Person who identified the finding","Internal support team / monitoring reviewer / regulator liaison"],
+  ["Engagement partner","Sign-off responsibility for the affected area"],
+  ["Engagement manager","Day-to-day supervision and review"],
+  ["Senior(s) on the affected area","Performed the work where the finding arose"],
+  ["Junior(s) on the affected area","Detailed execution"],
+  ["Engagement Quality Reviewer (EQR)","Reviews significant judgements — often missed by firms"],
+  ["Specialists / experts used","Valuation, actuarial, IT, tax, controls, data analytics"],
+  ["Methodology / training function","Whether guidance or training gaps contributed"]
+];
+const ROOT_CATS = ["Knowledge & skills of individuals","Professional scepticism & mindset","Supervision & review","Insufficient documentation","Use of specialists & experts","High number of complex issues","Project management & resourcing","Motivation & commitment","Firm policies/procedures not followed","Client-related (external)","Other"];
+const SYMPTOM_CATS = ["Insufficient documentation"]; // most-common mislabelled symptom
+const ACTION_TYPES = ["Training / communication","Supervision & review change","Resourcing / skill-mix change","Methodology, tools & templates","Project management / milestones","Real-time review / coaching next cycle","Client / audit committee communication","Behavioural / cultural","Risk profiling — acceptance & continuance","Other"];
+
+/* ---------- state ---------- */
+let state = {chains:[], roots:[], actions:[], interview:{}};
+
+/* ---------- builders ---------- */
+function el(html){const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstChild;}
+
+function renderInterviewees(){
+  const host=document.getElementById('interviewees');host.innerHTML='';
+  INTERVIEWEES.forEach((r,i)=>{
+    const row=el(`<div class="checkrow">
+      <input type="checkbox" data-iv="${i}">
+      <div><div class="lbl">${r[0]}</div><div class="desc">${r[1]}</div></div>
+      <label class="na"><input type="checkbox" data-na="${i}"> N/A or not interviewed — reason:</label>
+    </div>`);
+    host.appendChild(row);
+    const reason=el(`<input type="text" data-ivreason="${i}" placeholder="Reason if relevant person not interviewed" style="margin:-2px 0 8px">`);
+    host.appendChild(reason);
+  });
+}
+
+function chainTpl(idx){
+  let lines='';
+  for(let w=1;w<=5;w++){
+    lines+=`<div class="whyline"><span class="tag">Why ${w}?</span><input type="text" data-chain="${idx}" data-why="${w}" placeholder="${w===1?'Why did the finding occur?':'Why is that?'}"></div>`;
+  }
+  return el(`<div class="whychain">
+    <div class="chead"><b>Cause chain ${idx+1}</b><button class="rm" onclick="removeChain(${idx})">Remove</button></div>
+    ${lines}
+  </div>`);
+}
+function renderChains(){const h=document.getElementById('whychains');h.innerHTML='';state.chains.forEach((c,i)=>{const n=chainTpl(i);h.appendChild(n);n.querySelectorAll('input').forEach(inp=>{inp.value=c['why'+inp.dataset.why]||'';inp.oninput=()=>{state.chains[i]['why'+inp.dataset.why]=inp.value;validate();};});});}
+function addChain(){state.chains.push({});renderChains();validate();}
+function removeChain(i){state.chains.splice(i,1);renderChains();validate();}
+
+function rootTpl(idx,d){
+  const opts=ROOT_CATS.map(c=>`<option ${d.cat===c?'selected':''}>${c}</option>`).join('');
+  return el(`<div class="actionrow">
+    <div class="chead" style="display:flex;justify-content:space-between;margin-bottom:8px"><b>Root cause ${idx+1}</b><button class="rm" onclick="removeRoot(${idx})">Remove</button></div>
+    <div class="grid g2">
+      <div class="field"><label>Category</label><select data-root="${idx}" data-k="cat"><option value="">— select —</option>${opts}</select></div>
+      <div class="field"><label>Internal / external</label><select data-root="${idx}" data-k="loc"><option value="">—</option><option ${d.loc==='Internal'?'selected':''}>Internal</option><option ${d.loc==='External'?'selected':''}>External</option></select></div>
+    </div>
+    <div class="field"><label>Describe the root cause (specific to this finding)</label><textarea data-root="${idx}" data-k="desc">${d.desc||''}</textarea></div>
+  </div>`);
+}
+function renderRoots(){const h=document.getElementById('rootcauses');h.innerHTML='';state.roots.forEach((d,i)=>{const n=rootTpl(i,d);h.appendChild(n);n.querySelectorAll('[data-k]').forEach(inp=>{inp.oninput=inp.onchange=()=>{state.roots[i][inp.dataset.k]=inp.value;validate();};});});}
+function addRoot(){state.roots.push({});renderRoots();validate();}
+function removeRoot(i){state.roots.splice(i,1);renderRoots();validate();}
+
+function actionTpl(idx,d){
+  const opts=ACTION_TYPES.map(c=>`<option ${d.type===c?'selected':''}>${c}</option>`).join('');
+  return el(`<div class="actionrow">
+    <div class="chead" style="display:flex;justify-content:space-between;margin-bottom:8px"><b>Action ${idx+1}</b><button class="rm" onclick="removeAction(${idx})">Remove</button></div>
+    <div class="field"><label>Action — what will be done</label><textarea data-act="${idx}" data-k="desc">${d.desc||''}</textarea></div>
+    <div class="grid g3">
+      <div class="field"><label>Action type</label><select data-act="${idx}" data-k="type"><option value="">— select —</option>${opts}</select></div>
+      <div class="field"><label>Owner</label><input type="text" data-act="${idx}" data-k="owner" value="${d.owner||''}"></div>
+      <div class="field"><label>Due date</label><input type="date" data-act="${idx}" data-k="due" value="${d.due||''}"></div>
+    </div>
+    <div class="grid g3">
+      <div class="field"><label>Thematic or isolated</label><select data-act="${idx}" data-k="scope"><option value="">—</option><option ${d.scope==='Isolated'?'selected':''}>Isolated</option><option ${d.scope==='Thematic'?'selected':''}>Thematic</option></select></div>
+      <div class="field"><label>Real-time review next cycle?</label><select data-act="${idx}" data-k="rtr"><option value="">—</option><option ${d.rtr==='Yes'?'selected':''}>Yes</option><option ${d.rtr==='No'?'selected':''}>No</option></select></div>
+      <div class="field"><label>Review / coaching date</label><input type="date" data-act="${idx}" data-k="rtrdate" value="${d.rtrdate||''}"></div>
+    </div>
+  </div>`);
+}
+function renderActions(){const h=document.getElementById('actions');h.innerHTML='';state.actions.forEach((d,i)=>{const n=actionTpl(i,d);h.appendChild(n);n.querySelectorAll('[data-k]').forEach(inp=>{inp.oninput=inp.onchange=()=>{state.actions[i][inp.dataset.k]=inp.value;validate();};});});}
+function addAction(){state.actions.push({});renderActions();validate();}
+function removeAction(i){state.actions.splice(i,1);renderActions();validate();}
+
+/* ---------- smart validation ---------- */
+function field(f){const e=document.querySelector(`[data-f="${f}"]`);return e?e.value.trim():'';}
+function checked(f){const e=document.querySelector(`[data-f="${f}"]`);return e&&e.checked;}
+
+function validate(){
+  const flags=[];
+  // independence
+  const prep=field('rcaby').toLowerCase(), partner=field('partner').toLowerCase();
+  if(prep && partner && prep===partner) flags.push(['err','Independence breach','The RCA preparer is the engagement partner. RCA must be run by someone independent of the engagement team.']);
+  if(field('rcaby') && !checked('ind1')) flags.push(['warn','Confirm independence','Tick that the preparer is independent of the engagement team (section 2).']);
+  if(field('rcaby') && !checked('ind2')) flags.push(['warn','Confirm independence','Tick that the preparer is independent of the monitoring reviewer (section 2).']);
+  // interviewees not covered
+  let missed=[];
+  INTERVIEWEES.forEach((r,i)=>{
+    const done=document.querySelector(`[data-iv="${i}"]`)?.checked;
+    const na=document.querySelector(`[data-na="${i}"]`)?.checked;
+    const reason=document.querySelector(`[data-ivreason="${i}"]`)?.value.trim();
+    if(!done && !(na&&reason)) missed.push(r[0]);
+  });
+  const eqrMissed = !document.querySelector('[data-iv="5"]')?.checked && !(document.querySelector('[data-na="5"]')?.checked && document.querySelector('[data-ivreason="5"]')?.value.trim());
+  if(eqrMissed) flags.push(['warn','Interview the EQR','ASIC: in most RCAs the EQR was not interviewed. Interview them or record why.']);
+  if(missed.length>1) flags.push(['warn','Interviews incomplete','Not yet covered (or no reason given): '+missed.slice(0,4).join(', ')+(missed.length>4?'…':'')]);
+  // five whys depth
+  if(state.chains.length===0) flags.push(['warn','No cause chain yet','Add at least one Five-Whys chain (section 5).']);
+  state.chains.forEach((c,i)=>{
+    const depth=[1,2,3,4,5].filter(w=>(c['why'+w]||'').trim()).length;
+    if(depth>0 && depth<3) flags.push(['warn',`Chain ${i+1}: drill deeper`,'Fewer than 3 "why" levels — likely still at the symptom. Keep asking why.']);
+  });
+  // symptom guard on classification
+  state.roots.forEach((d,i)=>{
+    if(SYMPTOM_CATS.includes(d.cat)){
+      const deepest=Math.max(0,...state.chains.map(c=>[1,2,3,4,5].filter(w=>(c['why'+w]||'').trim()).length));
+      if(deepest<4) flags.push(['warn',`Root ${i+1} may be a symptom`,'"Insufficient documentation" is usually a symptom of supervision, scepticism or skills. Drill further before classifying it as the root cause.']);
+    }
+  });
+  if(state.roots.length===0) flags.push(['warn','Classify the root cause','Add at least one classified root cause (section 6).']);
+  // actions
+  const acts=state.actions.filter(a=>a.desc&&a.desc.trim());
+  if(acts.length===0) flags.push(['warn','No action yet','Each root cause needs at least one remedial action (section 7).']);
+  if(acts.length>0 && acts.every(a=>a.type==='Training / communication'))
+    flags.push(['err','Action too narrow','Every action is "training/communication" — ASIC\'s top criticism. Add a wider action (supervision, resourcing, project management, real-time review).']);
+  if(acts.length>0 && !acts.some(a=>a.rtr==='Yes'))
+    flags.push(['warn','Plan a real-time review','No action includes a real-time review/coaching next cycle to confirm the fix worked.']);
+  acts.forEach((a,i)=>{ if(a.desc&&(!a.owner||!a.due)) flags.push(['warn',`Action ${i+1} incomplete`,'Assign an owner and a due date.']); });
+  // missing core fields
+  ['client','datefound','source','findingdesc'].forEach(f=>{});
+
+  if(flags.length===0) flags.push(['ok','Looks complete','All built-in better-practice checks pass. Review the section 8 checklist before sign-off.']);
+
+  const vb=document.getElementById('vbody');
+  vb.innerHTML=flags.map(f=>`<div class="flag ${f[0]}"><b>${f[1]}</b>${f[2]}</div>`).join('');
+  const real=flags.filter(f=>f[0]!=='ok').length;
+  document.getElementById('flagcount').textContent=real;
+  document.getElementById('flagcount').style.background = flags.some(f=>f[0]==='err')?'#B23A48':(real?'#B8860B':'#1E7D4F');
+  autosave();
+}
+
+function toggleV(){const b=document.getElementById('vbody');const btn=event.target;if(b.style.display==='none'){b.style.display='';btn.textContent='–';}else{b.style.display='none';btn.textContent='+';}}
+
+/* ---------- persistence ---------- */
+function collect(){
+  const o={f:{},chains:state.chains,roots:state.roots,actions:state.actions,interview:{}};
+  document.querySelectorAll('[data-f]').forEach(e=>{o.f[e.dataset.f]= e.type==='checkbox'? e.checked : e.value;});
+  INTERVIEWEES.forEach((r,i)=>{o.interview[i]={done:document.querySelector(`[data-iv="${i}"]`)?.checked,na:document.querySelector(`[data-na="${i}"]`)?.checked,reason:document.querySelector(`[data-ivreason="${i}"]`)?.value};});
+  return o;
+}
+function apply(o){
+  if(!o)return;
+  document.querySelectorAll('[data-f]').forEach(e=>{if(o.f&&o.f[e.dataset.f]!==undefined){if(e.type==='checkbox')e.checked=o.f[e.dataset.f];else e.value=o.f[e.dataset.f];}});
+  state.chains=o.chains||[];state.roots=o.roots||[];state.actions=o.actions||[];
+  renderChains();renderRoots();renderActions();
+  if(o.interview)INTERVIEWEES.forEach((r,i)=>{const iv=o.interview[i]||{};const a=document.querySelector(`[data-iv="${i}"]`);const b=document.querySelector(`[data-na="${i}"]`);const c=document.querySelector(`[data-ivreason="${i}"]`);if(a)a.checked=!!iv.done;if(b)b.checked=!!iv.na;if(c)c.value=iv.reason||'';});
+  validate();
+}
+let saveTimer;
+function autosave(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem('nova_rca',JSON.stringify(collect()));document.getElementById('autostatus').textContent='Autosaved '+new Date().toLocaleTimeString();}catch(e){}},400);}
+function saveDraft(){
+  const o=collect();const name=(o.f.client||'RCA').replace(/[^a-z0-9]/gi,'_');
+  const blob=new Blob([JSON.stringify(o,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Nova_RCA_'+name+'.json';a.click();
+}
+function loadDraft(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{apply(JSON.parse(e.target.result));}catch(err){alert('Could not read file.');}};r.readAsText(f);}
+function clearAll(){if(!confirm('Clear all fields? Export or save your draft first.'))return;localStorage.removeItem('nova_rca');location.reload();}
+function exportWorkpaper(){window.print();}
+
+/* ---------- init ---------- */
+renderInterviewees();
+document.querySelectorAll('[data-f]').forEach(e=>{e.addEventListener('input',validate);e.addEventListener('change',validate);});
+document.querySelectorAll('[data-iv],[data-na],[data-ivreason]').forEach(e=>{e.addEventListener('input',validate);e.addEventListener('change',validate);});
+// re-bind interviewee listeners after render
+function bindIv(){document.querySelectorAll('[data-iv],[data-na],[data-ivreason]').forEach(e=>{e.oninput=validate;e.onchange=validate;});}
+bindIv();
+try{const saved=localStorage.getItem('nova_rca');if(saved)apply(JSON.parse(saved));}catch(e){}
+if(state.chains.length===0)addChain();
+if(state.roots.length===0)addRoot();
+if(state.actions.length===0)addAction();
+bindIv();
+validate();
+</script>
+</body>
+</html>
